@@ -1,3 +1,0 @@
-[tool.flake8]
-max-line-length = 100
-extend-ignore = E203  # recommended when using black
