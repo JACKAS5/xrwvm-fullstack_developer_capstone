@@ -6,9 +6,20 @@
   <link rel="stylesheet" href="static/bootstrap.min.css">
 <script>
 
-const logout = async (e) => {
-//Include the code for logout here.
-};
+function logout() {
+      // Get username before we clear it
+      let username = sessionStorage.getItem('username') || '';
+      
+      // Immediately clear the stored username
+      sessionStorage.removeItem('username');
+      
+      // Show the logout message
+      alert("Logging out " + (username || "user") + "...");
+      
+      // Redirect to the Django logout endpoint
+      // → This is normal browser navigation → no fetch → no NetworkError
+      window.location.href = window.location.origin + "/djangoapp/logout/";
+    }
 
 let checkSession = ()=>{
   let curr_user = sessionStorage.getItem("username");
