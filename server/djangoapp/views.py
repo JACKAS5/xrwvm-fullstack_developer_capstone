@@ -96,7 +96,18 @@ def get_dealerships(request, state="All"):
 
 # Create a `get_dealer_reviews` view to render the reviews of a dealer
 # def get_dealer_reviews(request,dealer_id):
-# ...
+def get_dealer_reviews(request, dealer_id):
+    # if dealer id has been provided
+    if(dealer_id):
+        endpoint = "/fetchReviews/dealer/"+str(dealer_id)
+        reviews = get_request(endpoint)
+        for review_detail in reviews:
+            response = analyze_review_sentiments(review_detail['review'])
+            print(response)
+            review_detail['sentiment'] = response['sentiment']
+        return JsonResponse({"status":200,"reviews":reviews})
+    else:
+        return JsonResponse({"status":400,"message":"Bad Request"})
 
 # Create a `get_dealer_details` view to render the dealer details
 # def get_dealer_details(request, dealer_id):
@@ -110,62 +121,6 @@ def get_dealer_details(request, dealer_id):
 
 # Create a `add_review` view to submit a review
 # def add_review(request):
-def get_dealer_reviews(request, dealer_id):
-    print(f"Received dealer_id: {dealer_id} (type: {type(dealer_id)})")  # ← debug
-
-    if not dealer_id:
-        return JsonResponse({"status": 400, "message": "Bad Request"}, status=400)
-
-    endpoint = f"/fetchReviews/dealer/{dealer_id}"
-    print(f"Calling endpoint: {endpoint}")  # ← debug
-
-    try:
-        raw_response = get_request(endpoint)
-        print("Raw response from get_request:", type(raw_response), raw_response)  # ← very important
-
-        # Handle common response shapes
-        if isinstance(raw_response, dict):
-            print("Response is dict, keys:", list(raw_response.keys()))
-            reviews = raw_response.get("reviews", [])
-            if not reviews and "data" in raw_response:
-                reviews = raw_response.get("data", [])
-        elif isinstance(raw_response, list):
-            reviews = raw_response
-        else:
-            reviews = []
-            print("Unexpected response type:", type(raw_response))
-
-        print(f"Number of reviews before sentiment: {len(reviews)}")
-
-        # Add sentiment safely
-        for review in reviews:
-            if not isinstance(review, dict):
-                print("Skipping non-dict review:", review)
-                continue
-            review_text = review.get('review', '')
-            if not review_text:
-                review['sentiment'] = 'neutral'
-                continue
-
-            try:
-                sentiment_resp = analyze_review_sentiments(review_text)
-                print(f"Sentiment for '{review_text[:30]}...': {sentiment_resp}")
-                review['sentiment'] = sentiment_resp.get('sentiment', 'neutral')
-            except Exception as sent_err:
-                print(f"Sentiment failed: {sent_err}")
-                review['sentiment'] = 'neutral'
-
-        return JsonResponse({"status": 200, "reviews": reviews})
-
-    except Exception as e:
-        import traceback
-        print("CRITICAL ERROR in get_dealer_reviews:")
-        print(traceback.format_exc())
-        return JsonResponse({
-            "status": 500,
-            "message": f"Server error: {str(e)}"
-        }, status=500)
-
 def add_review(request):
     if(request.user.is_anonymous == False):
         data = json.loads(request.body)
